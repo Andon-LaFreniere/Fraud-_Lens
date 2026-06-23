@@ -1,0 +1,61 @@
+version: "3.9"
+
+services:
+
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.5.0
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+    ports:
+      - "2181:2181"
+
+  kafka:
+    image: confluentinc/cp-kafka:7.5.0
+    depends_on: [zookeeper]
+    ports:
+      - "9092:9092"
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:29092,PLAINTEXT_HOST://localhost:9092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
+
+  # DynamoDB Local for development (swap for real AWS in prod)
+  dynamodb-local:
+    image: amazon/dynamodb-local:latest
+    ports:
+      - "8000:8000"
+    command: "-jar DynamoDBLocal.jar -sharedDb -inMemory"
+
+  transaction-service:
+    build: ./transaction-service
+    ports:
+      - "8080:8080"
+    depends_on: [kafka, dynamodb-local]
+    environment:
+      KAFKA_BOOTSTRAP_SERVERS: kafka:29092
+      AWS_REGION: us-east-1
+      # Point to local DynamoDB in dev
+      AWS_ACCESS_KEY_ID: local
+      AWS_SECRET_ACCESS_KEY: local
+      SPRING_PROFILES_ACTIVE: local
+
+  fraud-scoring-service:
+    build: ./fraud-scoring-service
+    ports:
+      - "8001:8001"
+    depends_on: [kafka, dynamodb-local, transaction-service]
+    environment:
+      KAFKA_BOOTSTRAP_SERVERS: kafka:29092
+      TRANSACTION_SERVICE_URL: http://transaction-service:8080
+      AWS_REGION: us-east-1
+      AWS_ACCESS_KEY_ID: local
+      AWS_SECRET_ACCESS_KEY: local
+
+  dashboard:
+    build: ./dashboard
+    ports:
+      - "3000:80"
+    depends_on: [transaction-service]
