@@ -1,7 +1,6 @@
 version: "3.9"
 
 services:
-
   zookeeper:
     image: confluentinc/cp-zookeeper:7.5.0
     environment:
@@ -41,6 +40,7 @@ services:
       AWS_ACCESS_KEY_ID: local
       AWS_SECRET_ACCESS_KEY: local
       SPRING_PROFILES_ACTIVE: local
+      DYNAMODB_ENDPOINT: http://dynamodb-local:8000
 
   fraud-scoring-service:
     build: ./fraud-scoring-service

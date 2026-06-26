@@ -111,9 +111,9 @@ def process_transaction(tx: dict):
 
 
 def resolve_severity(score: float) -> str:
-    if score >= 0.9: return "CRITICAL"
-    if score >= 0.75: return "HIGH"
-    if score >= 0.5: return "MEDIUM"
+    if score >= 0.88: return "CRITICAL"
+    if score >= 0.70: return "HIGH"
+    if score >= 0.50: return "MEDIUM"
     return "LOW"
 
 
